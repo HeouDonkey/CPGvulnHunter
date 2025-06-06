@@ -1,0 +1,310 @@
+  {
+    "elements":[
+      {
+        "dynamicTypeHintFullName":[
+          
+        ],
+        "_id":128849018882,
+        "evaluationStrategy":"BY_VALUE",
+        "code":"RET",
+        "typeFullName":"char*",
+        "lineNumber":18,
+        "order":2,
+        "_label":"METHOD_RETURN",
+        "possibleTypes":[
+          
+        ],
+        "columnNumber":1
+      },
+      {
+        "name":"input",
+        "_id":30064771081,
+        "signature":"",
+        "code":"input()",
+        "typeFullName":"char*",
+/        "order":2,
+        "methodFullName":"input",
+        "_label":"CALL",
+        "dynamicTypeHintFullName":[
+          
+        ],
+        "dispatchType":"STATIC_DISPATCH",
+        "columnNumber":11,
+        "possibleTypes":[
+          
+        ],
+        "argumentIndex":2
+      },
+      {
+        "dynamicTypeHintFullName":[
+          
+        ],
+        "name":"ptr",
+        "_id":68719476743,
+        "code":"ptr",
+        "typeFullName":"char*",
+        "lineNumber":28,
+        "order":1,
+        "_label":"IDENTIFIER",
+        "columnNumber":5,
+        "possibleTypes":[
+          
+        ],
+        "argumentIndex":1
+      },
+      {
+        "dynamicTypeHintFullName":[
+          
+        ],
+        "name":"ptr",
+        "_id":68719476745,
+        "code":"ptr",
+        "typeFullName":"char*",
+        "lineNumber":29,
+        "order":2,
+        "_label":"IDENTIFIER",
+        "columnNumber":19,
+        "possibleTypes":[
+          
+        ],
+        "argumentIndex":2
+      },
+      {
+        "dynamicTypeHintFullName":[
+          
+        ],
+        "name":"data",
+        "_id":68719476744,
+        "code":"data",
+        "typeFullName":"char[256]",
+        "lineNumber":29,
+        "order":1,
+        "_label":"IDENTIFIER",
+        "columnNumber":13,
+        "possibleTypes":[
+          
+        ],
+        "argumentIndex":1
+      },
+      {
+        "dynamicTypeHintFullName":[
+          
+        ],
+        "name":"data",
+        "_id":68719476747,
+        "code":"data",
+        "typeFullName":"char[256]",
+        "lineNumber":30,
+        "order":1,
+        "_label":"IDENTIFIER",
+        "columnNumber":20,
+        "possibleTypes":[
+          
+        ],
+        "argumentIndex":1
+      },
+      {
+        "dynamicTypeHintFullName":[
+          
+        ],
+        "name":"data",
+        "_id":115964116992,
+        "evaluationStrategy":"BY_VALUE",
+        "isVariadic":false,
+        "typeFullName":"char[]",
+        "lineNumber":8,
+        "order":1,
+        "_label":"METHOD_PARAMETER_IN",
+        "possibleTypes":[
+          
+        ],
+        "index":1,
+        "code":"char data[]",
+        "columnNumber":21
+      }
+    ]
+  }
+
+  {
+    "path":[
+      {
+        "node":{
+          "dynamicTypeHintFullName":[
+            
+          ],
+          "_id":128849018882,
+          "evaluationStrategy":"BY_VALUE",
+          "code":"RET",
+          "typeFullName":"char*",
+          "lineNumber":18,
+          "order":2,
+          "_label":"METHOD_RETURN",
+          "possibleTypes":[
+            
+          ],
+          "columnNumber":1
+        },
+        "callSiteStack":[
+          
+        ],
+        "visible":true,
+        "isOutputArg":false,
+        "outEdgeLabel":""
+      },
+      {
+        "node":{
+          "name":"input",
+          "_id":30064771081,
+          "signature":"",
+          "code":"input()",
+          "typeFullName":"char*",
+          "lineNumber":28,
+          "order":2,
+          "methodFullName":"input",
+          "_label":"CALL",
+          "dynamicTypeHintFullName":[
+            
+          ],
+          "dispatchType":"STATIC_DISPATCH",
+          "columnNumber":11,
+          "possibleTypes":[
+            
+          ],
+          "argumentIndex":2
+        },
+        "callSiteStack":[
+          
+        ],
+        "visible":true,
+        "isOutputArg":false,
+        "outEdgeLabel":"input()"
+      },
+      {
+        "node":{
+          "dynamicTypeHintFullName":[
+            
+          ],
+          "name":"ptr",
+          "_id":68719476743,
+          "code":"ptr",
+          "typeFullName":"char*",
+          "lineNumber":28,
+          "order":1,
+          "_label":"IDENTIFIER",
+          "columnNumber":5,
+          "possibleTypes":[
+            
+          ],
+          "argumentIndex":1
+        },
+        "callSiteStack":[
+          
+        ],
+        "visible":true,
+        "isOutputArg":false,
+        "outEdgeLabel":"ptr"
+      },
+      {
+        "node":{
+          "dynamicTypeHintFullName":[
+            
+          ],
+          "name":"ptr",
+          "_id":68719476745,
+          "code":"ptr",
+          "typeFullName":"char*",
+          "lineNumber":29,
+          "order":2,
+          "_label":"IDENTIFIER",
+          "columnNumber":19,
+          "possibleTypes":[
+            
+          ],
+          "argumentIndex":2
+        },
+        "callSiteStack":[
+          
+        ],
+        "visible":true,
+        "isOutputArg":false,
+        "outEdgeLabel":"ptr"
+      },
+      {
+        "node":{
+          "dynamicTypeHintFullName":[
+            
+          ],
+          "name":"data",
+          "_id":68719476744,
+          "code":"data",
+          "typeFullName":"char[256]",
+          "lineNumber":29,
+          "order":1,
+          "_label":"IDENTIFIER",
+          "columnNumber":13,
+          "possibleTypes":[
+            
+          ],
+          "argumentIndex":1
+        },
+        "callSiteStack":[
+          
+        ],
+        "visible":true,
+        "isOutputArg":false,
+        "outEdgeLabel":"data"
+      },
+      {
+        "node":{
+          "dynamicTypeHintFullName":[
+            
+          ],
+          "name":"data",
+          "_id":68719476747,
+          "code":"data",
+          "typeFullName":"char[256]",
+          "lineNumber":30,
+          "order":1,
+          "_label":"IDENTIFIER",
+          "columnNumber":20,
+          "possibleTypes":[
+            
+          ],
+          "argumentIndex":1
+        },
+        "callSiteStack":[
+          
+        ],
+        "visible":true,
+        "isOutputArg":false,
+        "outEdgeLabel":""
+      },
+      {
+        "node":{
+          "dynamicTypeHintFullName":[
+            
+          ],
+          "name":"data",
+          "_id":115964116992,
+          "evaluationStrategy":"BY_VALUE",
+          "isVariadic":false,
+          "typeFullName":"char[]",
+          "lineNumber":8,
+          "order":1,
+          "_label":"METHOD_PARAMETER_IN",
+          "possibleTypes":[
+            
+          ],
+          "index":1,
+          "code":"char data[]",
+          "columnNumber":21
+        },
+        "callSiteStack":[
+          
+        ],
+        "visible":true,
+        "isOutputArg":false,
+        "outEdgeLabel":""
+      }
+    ]
+  }

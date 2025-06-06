@@ -1,0 +1,17 @@
+
+
+llm_client:
+  base_url: "http://192.168.5.253:3000/api/"
+  api_key: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjBjN2ZjYWI0LWNkYTctNDQ5MC04Y2VkLThmZDNjNDQ0ODM4MyJ9.EF4VyeqVO0rfgN5mpFWYYZEaarcOXSQ1vjw-UYVCfkI"
+  model: "qwen2.5:14b"
+
+joern:
+  installation_path: "/home/nstl/data/vuln_hunter/heouJoern/joern/joern-cli/target/universal/stage/joern"
+  
+vulnerability_detection:
+  timeout: 300
+  max_functions: 1000
+  
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
