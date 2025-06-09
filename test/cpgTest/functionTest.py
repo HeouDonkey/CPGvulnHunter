@@ -1,12 +1,5 @@
 import logging
-from py2joern.cpgs.cpg import CPG
-from py2joern.cpgs.models.function import Function
-from py2joern.cpgs.models.semantics import *
-from py2joern.cpgs.models.sink import Sink
-from py2joern.cpgs.models.source import Source
-from py2joern.llmBridge.clients.lamaClient import LlamaClient
-from py2joern.llmBridge.models.prompt import FunctionPrompt
-from py2joern.llmBridge.core.llmBridge import VulnerabilityLLMBridge
+
 
 # 在模块顶部配置日志（只需配置一次即可）
 logging.basicConfig(

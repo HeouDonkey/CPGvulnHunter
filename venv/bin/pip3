@@ -1,4 +1,4 @@
-#!/home/nstl/data/vuln_hunter/py2joern/venv/bin/python3
+#!/home/nstl/data/CPGvulnHunter/venv/bin/python3.12
 # -*- coding: utf-8 -*-
 import re
 import sys

@@ -1,0 +1,100 @@
+{
+  "analysis_summary": {
+    "src_path": "/home/nstl/data/CPGvulnHunter/test/test_case/test1",
+    "total_execution_time": 226.4538917541504,
+    "total_passes": 2,
+    "successful_passes": 2,
+    "failed_passes": 0,
+    "timestamp": "2025-06-09T13:35:41.023000"
+  },
+  "cpg_info": {
+    "total_functions": 9,
+    "external_functions": 3,
+    "internal_functions": 6
+  },
+  "config": {
+    "project_name": "CPGvulnHunter",
+    "version": "1.0.0",
+    "debug_mode": false,
+    "llm": {
+      "api_key": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjBjN2ZjYWI0LWNkYTctNDQ5MC04Y2VkLThmZDNjNDQ0ODM4MyJ9.EF4VyeqVO0rfgN5mpFWYYZEaarcOXSQ1vjw-UYVCfkI",
+      "base_url": "http://192.168.5.253:3000/api/",
+      "model": "qwen2.5:14b",
+      "temperature": 0.7,
+      "max_tokens": 2048,
+      "timeout": 30
+    },
+    "joern": {
+      "installation_path": "/home/nstl/data/vuln_hunter/heouJoern/joern/joern-cli/target/universal/stage/joern",
+      "timeout": 300,
+      "memory_limit": "8G",
+      "cpg_var": "cpg",
+      "workspace_path": "workspace",
+      "enable_cache": true,
+      "cache_dir": "cache"
+    },
+    "engine": {
+      "max_call_depth": 20,
+      "timeout_per_pass": 300,
+      "parallel_execution": false,
+      "max_functions": 1000,
+      "output_dir": "output",
+      "save_intermediate_results": true,
+      "report_format": "json",
+      "enabled_passes": [
+        "init",
+        "cwe78"
+      ],
+      "pass_config": {
+        "cwe78": {
+          "confidence_threshold": 0.6,
+          "max_sources": 50,
+          "max_sinks": 50
+        }
+      }
+    },
+    "logging": {
+      "level": "DEBUG",
+      "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+      "file": "logs/cpgvulnhunter.log",
+      "console": true,
+      "max_file_size": "10MB",
+      "backup_count": 5
+    },
+    "vulnerability_detection": {
+      "timeout": 300,
+      "confidence_threshold": 0.6,
+      "max_paths": 100,
+      "enable_path_optimization": true,
+      "cwe_types": [
+        "CWE-78"
+      ]
+    }
+  },
+  "pass_results": [
+    {
+      "pass_name": "init",
+      "success": true,
+      "execution_time": 74.2143063545227,
+      "findings_count": 0,
+      "errors_count": 0,
+      "findings": [],
+      "errors": [],
+      "metadata": {
+        "cpg_functions": 9
+      }
+    },
+    {
+      "pass_name": "cwe78",
+      "success": true,
+      "execution_time": 152.23751854896545,
+      "findings_count": 0,
+      "errors_count": 0,
+      "findings": [],
+      "errors": [],
+      "metadata": {
+        "cpg_functions": 9
+      }
+    }
+  ]
+}

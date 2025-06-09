@@ -1,6 +1,6 @@
 import logging
 from py2joern.cpgs.cpg import CPG
-from src.py2joern.hunt import Hunt
+from src.CPGvulnHunter.hunt import Hunt
 
 def run():
 

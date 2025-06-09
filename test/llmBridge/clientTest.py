@@ -29,7 +29,7 @@ class TestLlamaClient(unittest.TestCase):
         self.assertEqual(self.client.api_key, "test_key")
         self.assertEqual(self.client.model, "test_model")
     
-    @patch('py2joern.llmBridge.clients.lamaClient.OpenAI')
+    @patch('CPGvulnHunter.llmBridge.clients.lamaClient.OpenAI')
     def test_send_request(self, mock_openai):
         """测试发送请求"""
         # 模拟OpenAI响应
