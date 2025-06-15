@@ -1,0 +1,641 @@
+{
+    "0e0e9c2a5d79c9d3aaec207fadbafca5": {
+        "analysis_result": {
+            "function_name": "command.c:6:6:MAX_BUFFER:0",
+            "param_flows": [
+                {
+                    "from": 1,
+                    "to": 1
+                },
+                {
+                    "from": 2,
+                    "to": 2
+                },
+                {
+                    "from": 3,
+                    "to": 3
+                },
+                {
+                    "from": 1,
+                    "to": 2
+                },
+                {
+                    "from": 1,
+                    "to": 3
+                },
+                {
+                    "from": 1,
+                    "to": -1
+                },
+                {
+                    "from": 2,
+                    "to": -1
+                },
+                {
+                    "from": 3,
+                    "to": -1
+                }
+            ],
+            "confidence": "high",
+            "reasoning": "数据流分析表明，input_buffer参数（参数1）的数据可以流向validated（参数2）和sanitized（参数3），并且所有参数都可能影响返回值。因此，包含了参数透传映射以及参数间和参数到返回值的数据流路径。"
+        }
+    },
+    "2d09e8ee16840541090460381d8d23dd": {
+        "analysis_result": {
+            "function_name": "printf",
+            "param_flows": [
+                {
+                    "from": 1,
+                    "to": 1
+                },
+                {
+                    "from": 2,
+                    "to": 2
+                },
+                {
+                    "from": 2,
+                    "to": -1
+                }
+            ],
+            "confidence": "high",
+            "reasoning": "printf函数的数据流分析显示，第一个参数（格式字符串）透传给自身，第二个参数（可变参数）也透传给自身。此外，第二个参数的内容会影响返回值，因此存在从第二个参数到返回值的数据流。"
+        }
+    },
+    "98624c216cdce2c6fe9e6c19d2a7b04c": {
+        "analysis_result": {
+            "function_name": "fgets",
+            "param_flows": [
+                {
+                    "from": 1,
+                    "to": 1
+                },
+                {
+                    "from": 2,
+                    "to": 2
+                },
+                {
+                    "from": 3,
+                    "to": 3
+                },
+                {
+                    "from": 3,
+                    "to": 1
+                },
+                {
+                    "from": 1,
+                    "to": -1
+                }
+            ],
+            "confidence": "high",
+            "reasoning": "数据从stream(参数3)流向buffer(参数1)，并且buffer(参数1)的内容作为返回值返回。所有参数都包含自传递映射以确保污点分析的连续性。"
+        }
+    },
+    "0d46ff9fda068bad230ab69fcf3c70c7": {
+        "analysis_result": {
+            "function_name": "strlen",
+            "param_flows": [
+                {
+                    "from": 1,
+                    "to": 1
+                },
+                {
+                    "from": 1,
+                    "to": -1
+                }
+            ],
+            "confidence": "high",
+            "reasoning": "strlen函数的数据流分析表明，参数1（输入字符串）的内容决定了返回值（字符串长度）。因此，必须包含参数1到返回值的传递映射。同时，为了确保污点分析的连续性，参数1也需要透传给自身。"
+        }
+    },
+    "66d21f47e443ef122cbd4152c7fe6e6d": {
+        "analysis_result": {
+            "function_name": "strcpy",
+            "param_flows": [
+                {
+                    "from": 1,
+                    "to": 1
+                },
+                {
+                    "from": 2,
+                    "to": 2
+                },
+                {
+                    "from": 2,
+                    "to": 1
+                },
+                {
+                    "from": 2,
+                    "to": -1
+                }
+            ],
+            "confidence": "high",
+            "reasoning": "strcpy函数将第二个参数（源字符串）的内容复制到第一个参数（目标字符串）中，因此存在从参数2到参数1的数据流。同时，strcpy的返回值是第一个参数（目标字符串）的指针，因此也存在从参数2到返回值的数据流。参数透传确保了污点分析的连续性。"
+        }
+    },
+    "7cd3b2beb99d320bc9680352f19040d9": {
+        "analysis_result": {
+            "function_name": "strstr",
+            "param_flows": [
+                {
+                    "from": 1,
+                    "to": 1
+                },
+                {
+                    "from": 2,
+                    "to": 2
+                },
+                {
+                    "from": 1,
+                    "to": -1
+                },
+                {
+                    "from": 2,
+                    "to": -1
+                }
+            ],
+            "confidence": "high",
+            "reasoning": "strstr函数用于在字符串中查找子字符串，其返回值依赖于两个输入参数的内容。因此，两个参数都透传给自身以确保污点分析的连续性，并且两个参数都影响返回值，表示它们的数据流向返回值。"
+        }
+    },
+    "0adca097f179f9c49cf9a9c379b17bf4": {
+        "analysis_result": {
+            "function_name": "memset",
+            "param_flows": [
+                {
+                    "from": 1,
+                    "to": 1
+                },
+                {
+                    "from": 2,
+                    "to": 2
+                },
+                {
+                    "from": 3,
+                    "to": 3
+                },
+                {
+                    "from": 3,
+                    "to": 1
+                },
+                {
+                    "from": 3,
+                    "to": -1
+                }
+            ],
+            "confidence": "high",
+            "reasoning": "memset函数将第三个参数（长度）的数据传递给第一个参数（目标缓冲区），并且第三个参数的长度值也会影响返回值。因此，需要包含参数3到参数1和返回值的数据流映射，以及所有参数的自传递映射以确保污点分析的连续性。"
+        }
+    },
+    "6751644aaff35b87e45da16dd34e425b": {
+        "analysis_result": {
+            "function_name": "strcmp",
+            "param_flows": [
+                {
+                    "from": 1,
+                    "to": 1
+                },
+                {
+                    "from": 2,
+                    "to": 2
+                },
+                {
+                    "from": 1,
+                    "to": -1
+                },
+                {
+                    "from": 2,
+                    "to": -1
+                }
+            ],
+            "confidence": "high",
+            "reasoning": "strcmp函数比较两个字符串，其返回值依赖于两个输入参数的内容。因此，两个参数都需要透传给自身以保持污点连续性，并且两个参数都会影响返回值。"
+        }
+    },
+    "657f09e5bbe49517c97f0033a7da21b8": {
+        "analysis_result": {
+            "function_name": "system",
+            "param_flows": [
+                {
+                    "from": 1,
+                    "to": 1
+                },
+                {
+                    "from": 1,
+                    "to": -1
+                }
+            ],
+            "confidence": "high",
+            "reasoning": "The 'system' function executes the command passed as its first argument. The data flow is straightforward: the command parameter (parameter 1) is passed to the system for execution, and the return value of the system function is influenced by the execution of this command. Therefore, there is a direct data flow from parameter 1 to the return value (-1). Parameter 1 also needs to be passed through to itself to maintain taint continuity."
+        }
+    },
+    "50f263c8231cb44e334a8718ebd59fc2": {
+        "analysis_result": {
+            "function_name": "CWE78_OS_Command_Injection__char_connect_socket_execl_01.c:32:32:COMMAND_ARG2:0",
+            "param_flows": [
+                {
+                    "from": 1,
+                    "to": 1
+                },
+                {
+                    "from": 1,
+                    "to": -1
+                }
+            ],
+            "confidence": "high",
+            "reasoning": "参数1透传给自身以确保污点分析的连续性，并且参数1的内容影响返回值，因此需要从参数1到返回值的数据流映射。"
+        }
+    },
+    "9c2e4957bbbc745f30dc0c3d9ed2455c": {
+        "analysis_result": {
+            "function_name": "CWE78_OS_Command_Injection__char_connect_socket_execl_01.c:47:47:INVALID_SOCKET:0",
+            "param_flows": [
+                {
+                    "from": 1,
+                    "to": 1
+                },
+                {
+                    "from": 1,
+                    "to": -1
+                }
+            ],
+            "confidence": "high",
+            "reasoning": "基于函数签名和常见模式，假设该函数可能涉及参数到返回值的传递，因此包含参数1的自传递映射和参数1到返回值的传递。由于缺乏具体实现细节，此分析基于一般性原则。"
+        }
+    },
+    "633a4b8d5298c5bfcab9e7fd4b1893bb": {
+        "analysis_result": {
+            "function_name": "socket",
+            "param_flows": [
+                {
+                    "from": 1,
+                    "to": 1
+                },
+                {
+                    "from": 2,
+                    "to": 2
+                },
+                {
+                    "from": 3,
+                    "to": 3
+                },
+                {
+                    "from": 1,
+                    "to": -1
+                },
+                {
+                    "from": 2,
+                    "to": -1
+                },
+                {
+                    "from": 3,
+                    "to": -1
+                }
+            ],
+            "confidence": "high",
+            "reasoning": "所有参数都可能影响返回值，因此需要包含参数透传映射以及参数到返回值的数据流。"
+        }
+    },
+    "4370de875a72efa318c4892e61944605": {
+        "analysis_result": {
+            "function_name": "inet_addr",
+            "param_flows": [
+                {
+                    "from": 1,
+                    "to": 1
+                },
+                {
+                    "from": 1,
+                    "to": -1
+                }
+            ],
+            "confidence": "high",
+            "reasoning": "The function inet_addr takes a single parameter (the IP address string) and returns a numerical representation of it. The data flow is from the input parameter to the return value, with the parameter also being passed through to itself to maintain taint continuity."
+        }
+    },
+    "a56053e596aaa0d51af53be707505ac2": {
+        "analysis_result": {
+            "function_name": "CWE78_OS_Command_Injection__char_connect_socket_execl_01.c:54:54:IP_ADDRESS:0",
+            "param_flows": [
+                {
+                    "from": 1,
+                    "to": 1
+                },
+                {
+                    "from": 1,
+                    "to": -1
+                }
+            ],
+            "confidence": "high",
+            "reasoning": "The function IP_ADDRESS takes a single parameter which is likely to be the source of data that could be tainted. The parameter is passed through to itself to maintain taint continuity and also flows to the return value, indicating that the function's output is directly influenced by its input."
+        }
+    },
+    "7aa1a13059a193d60706623f406a2407": {
+        "analysis_result": {
+            "function_name": "htons",
+            "param_flows": [
+                {
+                    "from": 1,
+                    "to": 1
+                },
+                {
+                    "from": 1,
+                    "to": -1
+                }
+            ],
+            "confidence": "high",
+            "reasoning": "htons函数通常用于将主机字节顺序转换为网络字节顺序，其返回值直接依赖于输入参数的值。因此，参数1的数据会透传给自身，并且会影响返回值。"
+        }
+    },
+    "ca39d1e3cdaa38ec6ba1630da220ce43": {
+        "analysis_result": {
+            "function_name": "CWE78_OS_Command_Injection__char_connect_socket_execl_01.c:53:53:TCP_PORT:0",
+            "param_flows": [
+                {
+                    "from": 1,
+                    "to": 1
+                },
+                {
+                    "from": 1,
+                    "to": -1
+                }
+            ],
+            "confidence": "high",
+            "reasoning": "该函数可能涉及将参数1的数据透传给自身，并且参数1的数据可能影响返回值。因此，必须包含参数1的自传递映射以及参数1到返回值的数据流路径。"
+        }
+    },
+    "b8eb3f8263ae3dd9f7d89c28840dbd50": {
+        "analysis_result": {
+            "function_name": "connect",
+            "param_flows": [
+                {
+                    "from": 1,
+                    "to": 1
+                },
+                {
+                    "from": 2,
+                    "to": 2
+                },
+                {
+                    "from": 3,
+                    "to": 3
+                },
+                {
+                    "from": 1,
+                    "to": -1
+                },
+                {
+                    "from": 2,
+                    "to": -1
+                },
+                {
+                    "from": 3,
+                    "to": -1
+                }
+            ],
+            "confidence": "high",
+            "reasoning": "由于函数签名和用法未提供具体描述，基于通用原则，假设所有参数都可能影响返回值，并且每个参数都需要透传给自身以保持污点连续性。因此，包含了所有参数的自传递映射以及每个参数到返回值的传递映射。"
+        }
+    },
+    "75fd6cbe6176c80979571a477a5e13ef": {
+        "analysis_result": {
+            "function_name": "CWE78_OS_Command_Injection__char_connect_socket_execl_01.c:48:48:SOCKET_ERROR:0",
+            "param_flows": [
+                {
+                    "from": 1,
+                    "to": 1
+                },
+                {
+                    "from": 1,
+                    "to": -1
+                }
+            ],
+            "confidence": "high",
+            "reasoning": "The function SOCKET_ERROR is analyzed to have a parameter that is both passed through to itself and influences the return value, indicating a direct data flow from the parameter to the return value. This is based on the assumption that the function's return value is directly derived from its input parameter, a common pattern in error checking or status reporting functions."
+        }
+    },
+    "355d9a1826ce8f345912f047d8a6cccc": {
+        "analysis_result": {
+            "function_name": "recv",
+            "param_flows": [
+                {
+                    "from": 1,
+                    "to": 1
+                },
+                {
+                    "from": 2,
+                    "to": 2
+                },
+                {
+                    "from": 3,
+                    "to": 3
+                },
+                {
+                    "from": 4,
+                    "to": 4
+                },
+                {
+                    "from": 1,
+                    "to": -1
+                },
+                {
+                    "from": 2,
+                    "to": -1
+                },
+                {
+                    "from": 3,
+                    "to": -1
+                },
+                {
+                    "from": 4,
+                    "to": -1
+                }
+            ],
+            "confidence": "high",
+            "reasoning": "All parameters are considered to potentially carry taint and thus are passed through to themselves to maintain taint continuity. Additionally, each parameter is considered to influence the return value, reflecting the function's potential to return data derived from any of its parameters."
+        }
+    },
+    "62338651e5efddbc9672ed0ace4464f2": {
+        "analysis_result": {
+            "function_name": "strchr",
+            "param_flows": [
+                {
+                    "from": 1,
+                    "to": 1
+                },
+                {
+                    "from": 2,
+                    "to": 2
+                },
+                {
+                    "from": 1,
+                    "to": -1
+                },
+                {
+                    "from": 2,
+                    "to": -1
+                }
+            ],
+            "confidence": "high",
+            "reasoning": "strchr函数用于在字符串中查找字符，第一个参数是字符串，第二个参数是要查找的字符。两个参数都会影响返回值，因此需要将两个参数都透传给自身，并且两个参数都会流向返回值。"
+        }
+    },
+    "5da7d33f01d6677076bf172309765ffb": {
+        "analysis_result": {
+            "function_name": "CWE78_OS_Command_Injection__char_connect_socket_execl_01.c:49:49:CLOSE_SOCKET:0",
+            "param_flows": [
+                {
+                    "from": 1,
+                    "to": 1
+                }
+            ],
+            "confidence": "high",
+            "reasoning": "由于函数签名和用法描述不足，基于安全考虑，假设参数1可能被污染，因此包含参数1的自传递映射以确保污点分析的连续性。"
+        }
+    },
+    "89709a5f9a6a14288fab762b76ce622f": {
+        "analysis_result": {
+            "function_name": "close",
+            "param_flows": [
+                {
+                    "from": 1,
+                    "to": 1
+                },
+                {
+                    "from": 1,
+                    "to": -1
+                }
+            ],
+            "confidence": "high",
+            "reasoning": "The function 'close' with a single parameter is analyzed to have a parameter-to-return flow, indicating that the input parameter influences the return value. Additionally, the parameter is passed through to itself to maintain taint continuity."
+        }
+    },
+    "76f7ec1626e2d27945ddf00c1347bc6e": {
+        "analysis_result": {
+            "function_name": "execl",
+            "param_flows": [
+                {
+                    "from": 1,
+                    "to": 1
+                },
+                {
+                    "from": 2,
+                    "to": 2
+                },
+                {
+                    "from": 3,
+                    "to": 3
+                },
+                {
+                    "from": 4,
+                    "to": 4
+                },
+                {
+                    "from": 5,
+                    "to": 5
+                },
+                {
+                    "from": 1,
+                    "to": -1
+                },
+                {
+                    "from": 2,
+                    "to": -1
+                },
+                {
+                    "from": 3,
+                    "to": -1
+                },
+                {
+                    "from": 4,
+                    "to": -1
+                },
+                {
+                    "from": 5,
+                    "to": -1
+                }
+            ],
+            "confidence": "high",
+            "reasoning": "所有参数都可能影响返回值，因此需要包含所有参数的透传映射以及参数到返回值的数据流。"
+        }
+    },
+    "5321c2e42bda6703ba641d0f7f08a9ae": {
+        "analysis_result": {
+            "function_name": "CWE78_OS_Command_Injection__char_connect_socket_execl_01.c:29:29:COMMAND_INT_PATH:0",
+            "param_flows": [
+                {
+                    "from": 1,
+                    "to": 1
+                },
+                {
+                    "from": 1,
+                    "to": -1
+                }
+            ],
+            "confidence": "high",
+            "reasoning": "The function COMMAND_INT_PATH takes a single parameter which is likely to be a command string. This parameter is both passed through to itself (to maintain taint continuity) and influences the return value, indicating that the command string's content affects the function's output."
+        }
+    },
+    "97f3e9fba80d3ac7e1ec3bbecd7b200f": {
+        "analysis_result": {
+            "function_name": "CWE78_OS_Command_Injection__char_connect_socket_execl_01.c:31:31:COMMAND_ARG1:0",
+            "param_flows": [
+                {
+                    "from": 1,
+                    "to": 1
+                },
+                {
+                    "from": 1,
+                    "to": -1
+                }
+            ],
+            "confidence": "high",
+            "reasoning": "参数1透传给自身以确保污点分析的连续性，并且参数1的内容影响返回值，因此需要从参数1到返回值的数据流。"
+        }
+    },
+    "a3589471a897aebed54ec651bf29722d": {
+        "analysis_result": {
+            "function_name": "CWE78_OS_Command_Injection__char_connect_socket_execl_01.c:33:33:COMMAND_ARG3:0",
+            "param_flows": [
+                {
+                    "from": 1,
+                    "to": 1
+                },
+                {
+                    "from": 1,
+                    "to": -1
+                }
+            ],
+            "confidence": "high",
+            "reasoning": "参数1透传给自身以确保污点分析的连续性，并且参数1的数据会影响返回值，因此需要包含从参数1到返回值的数据流。"
+        }
+    },
+    "73a5e51748184d92d0542de6cd51133d": {
+        "analysis_result": {
+            "function_name": "strcat",
+            "param_flows": [
+                {
+                    "from": 1,
+                    "to": 1
+                },
+                {
+                    "from": 2,
+                    "to": 2
+                },
+                {
+                    "from": 2,
+                    "to": 1
+                },
+                {
+                    "from": 1,
+                    "to": -1
+                },
+                {
+                    "from": 2,
+                    "to": -1
+                }
+            ],
+            "confidence": "high",
+            "reasoning": "strcat函数将第二个参数（源字符串）的内容追加到第一个参数（目标字符串）的末尾，并返回目标字符串的指针。因此，数据从参数2流向参数1，同时两个参数都影响返回值。必须包含参数透传映射以确保污点分析的连续性。"
+        }
+    }
+}

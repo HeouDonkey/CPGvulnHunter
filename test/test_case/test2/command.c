@@ -41,32 +41,42 @@ char* basic_validate(char* input) {
     return validated;
 }
 
-// 汇聚点函数 - 直接命令执行
-void execute_command(char* command) {
-    printf("执行命令: %s\n", command);
-    system(command);  
+// 添加消毒剂函数
+char* sanitize_command(char* command) {
+    static char sanitized[MAX_BUFFER];
+    strcpy(sanitized, command);
+
+    char* dangerous_keywords[] = {"rm", "del", ";", "&&", "||"};
+    int dangerous_count = sizeof(dangerous_keywords) / sizeof(dangerous_keywords[0]);
+
+    for (int i = 0; i < dangerous_count; i++) {
+        char* pos = strstr(sanitized, dangerous_keywords[i]);
+        if (pos) {
+            memset(pos, 'X', strlen(dangerous_keywords[i]));
+        }
+    }
+
+    return sanitized;
 }
 
-// 汇聚点函数 - 通过 popen 执行
-void list_files(char* path) {
-    char full_command[MAX_BUFFER];
-    snprintf(full_command, sizeof(full_command), "ls %s", path);  // path 参数是 SINK
-    
-    FILE* pipe = popen(full_command, "r");
-    if (pipe) {
-        char output[256];
-        while (fgets(output, sizeof(output), pipe)) {
-            printf("文件: %s", output);
-        }
-        pclose(pipe);
+// 汇聚点函数 - 直接命令执行
+void execute_command(char* command) {
+    printf("原始命令: %s\n", command);
+
+    // 使用消毒剂
+    char* sanitized_command = sanitize_command(command);
+    if (strcmp(command, sanitized_command) != 0) {
+        printf("命令被消毒: %s\n", sanitized_command);
     }
+
+    // 执行消毒后的命令
+    printf("执行命令: %s\n", sanitized_command);
+    system(sanitized_command);  
 }
 
 int main() {
 
     char* user_path = get_user_input();              // SOURCE
-    char* validated_path = basic_validate(user_path); // SANITIZER
-    list_files(validated_path);                      // SINK
-    
+    execute_command(user_path);
     return 0;
 }

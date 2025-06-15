@@ -5,8 +5,16 @@ import json
 import yaml
 from pathlib import Path
 
-from CPGvulnHunter.models.llm.llmConfig import LLMConfig
-
+@dataclass
+class LLMConfig:
+    """LLM 配置数据类"""
+    base_url: str = "http://localhost:11434"
+    api_key: str = ""
+    model: str = "qwen2.5-coder:32b"
+    timeout: int = 30
+    max_tokens: int = 4096
+    temperature: float = 0.7
+    cache_file: str = "llm_cache.json"
 
 @dataclass
 class JoernConfig:
@@ -18,7 +26,6 @@ class JoernConfig:
     workspace_path: str = "workspace"
     enable_cache: bool = True
     cache_dir: str = "cache"
-
 
 @dataclass
 class EngineConfig:
@@ -58,6 +65,7 @@ class VulnerabilityDetectionConfig:
     max_paths: int = 100
     enable_path_optimization: bool = True
     cwe_types: List[str] = field(default_factory=lambda: ["CWE-78"])
+
 
 
 @dataclass
@@ -286,33 +294,7 @@ class UnifiedConfig:
             else:
                 raise ValueError(f"不支持的配置文件格式: {suffix}")
     
-    def setup_logging(self) -> None:
-        """根据配置设置日志"""
-        level = getattr(logging, self.logging.level.upper(), logging.INFO)
-        
-        # 配置根日志记录器
-        root_logger = logging.getLogger()
-        root_logger.setLevel(level)
-        
-        # 清除现有的处理器
-        for handler in root_logger.handlers[:]:
-            root_logger.removeHandler(handler)
-        
-        formatter = logging.Formatter(self.logging.format)
-        
-        # 控制台处理器
-        if self.logging.console:
-            console_handler = logging.StreamHandler()
-            console_handler.setLevel(level)
-            console_handler.setFormatter(formatter)
-            root_logger.addHandler(console_handler)
-        
-        # 文件处理器
-        if self.logging.file:
-            file_handler = logging.FileHandler(self.logging.file)
-            file_handler.setLevel(level)
-            file_handler.setFormatter(formatter)
-            root_logger.addHandler(file_handler)
+   
     
     def validate(self) -> List[str]:
         """验证配置的有效性"""

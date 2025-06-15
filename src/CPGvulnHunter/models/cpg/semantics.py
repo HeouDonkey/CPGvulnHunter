@@ -60,6 +60,11 @@ class ParameterFlow:
             to_param=json_data['to']
         )
 
+    def toString(self) -> str:
+        """
+        将ParameterFlow转换为字符串表示
+        """
+        return f"({self.from_param}, {self.to_param})"
 
 @dataclass
 class Semantic:
@@ -73,6 +78,7 @@ class Semantic:
         self.param_flows = param_flows if param_flows is not None else []
         self.is_regex = is_regex
 
+    
 
     def to_Joern_script(self) -> str:
         """
@@ -81,7 +87,12 @@ class Semantic:
         flows_str = ', '.join(f'({flow.from_param}, {flow.to_param})' for flow in self.param_flows)
         return f'FlowSemantic.from("{self.method}", List({flows_str}), regex = {str(self.is_regex).lower()})'
 
-
+    def toString(self) -> str:
+        """
+        将Semantic转换为字符串表示
+        """
+        flows_str = ', '.join(flow.toString() for flow in self.param_flows)
+        return f"Semantic(method='{self.method}', param_flows=[{flows_str}], is_regex={self.is_regex})"
     
 @dataclass
 class Semantics:
@@ -99,6 +110,11 @@ class Semantics:
     )
     """
 
+    def toString(self) -> str:
+        """
+        将Semantics转换为字符串表示
+        """
+        return f"Semantics(semantic_list=[{', '.join(semantic.toString() for semantic in self.semantic_list)}])"
     def add_senmatic(self,semantic: Semantic) -> None:
         """
         添加单个语义规则

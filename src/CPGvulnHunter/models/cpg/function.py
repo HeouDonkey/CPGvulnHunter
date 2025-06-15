@@ -30,6 +30,25 @@ class Function:
     parameters: Optional[list['Parameter']] = None  # 函数参数列表
     useage : Optional[str] = None  # 函数调用点，用来丰富给大模型的信息
     
+    def get_sigenature(self) -> str:
+        """
+        生成函数签名
+        :return: 函数签名字符串
+        """
+        if self.signature:
+            return self.signature
+        
+        # 如果没有signature，尝试根据参数生成
+        param_types = []
+        if self.parameters:
+            for param in sorted(self.parameters, key=lambda p: p.index or 0):
+                param_types.append(param.type_full_name or 'ANY')
+        
+        param_str = ', '.join(param_types)
+        # 尝试从现有信息推断返回类型
+        return_type = 'ANY'
+        sigenature = f"{return_type} {self.name}({param_str})"
+        return sigenature
     
     def set_parameters(self, parameters: list['Parameter']):
         self.parameters = parameters
@@ -154,6 +173,19 @@ class Function:
         
         return cls(**kwargs)
     
+    @classmethod
+    def fromJson(cls, json_str: str) -> 'Function':
+        """
+        从JSON字符串创建Function对象（from_json的别名）
+        
+        Args:
+            json_str: JSON格式的字符串
+            
+        Returns:
+            Function: Function对象实例
+        """
+        return cls.from_json(json_str)
+    
     def generateFunctionInfo(self) -> str:
         """
         生成函数信息,用于给大模型进行查询。
@@ -233,14 +265,24 @@ class Function:
 
 
 
-    def findParameter(self,index) -> str:
+    def findParameterOut(self,index) -> str:
         """
         在Joern中定位函数的参数节点
         :param function: 函数对象
         :return: 查询命令字符串
         """
-        query = f'cpg.method.fullName("{self.full_name}").parameter.index({index})'
+        query = f'cpg.call.where(_.methodFullName("{self.full_name}")).argument({index}).l'
         return query
+
+    def findParameterIn(self,index) -> str:
+        """
+        在Joern中定位函数的参数节点
+        :param function: 函数对象
+        :return: 查询命令字符串
+        """
+        query = f'cpg.methodParameterIn.where(_.method.fullName("{self.full_name}")).index({index}).l'
+        return query
+
 
     def findReturnValue(self) -> str:
         """
@@ -408,89 +450,3 @@ class Parameter:
 
 
 
-
-
-@dataclass
-class File:
-    """
-    表示一个代码文件的数据模型
-    """
-    name: str
-    path: Optional[str] = None
-    content: Optional[str] = None
-    file_type: Optional[str] = None
-    size: Optional[int] = None
-
-    def __post_init__(self):
-        """初始化后处理"""
-        if self.path is None and self.name:
-            self.path = self.name
-    
-    def get_extension(self):
-        """获取文件扩展名"""
-        if self.name:
-            return self.name.split('.')[-1] if '.' in self.name else ''
-        return ''
-    
-    def to_dict(self):
-        """转换为字典"""
-        from dataclasses import asdict
-        return asdict(self)
-
-
-@dataclass
-class Class:
-    """
-    表示一个类的数据模型
-    """
-    name: str
-    namespace: Optional[str] = None
-    file_path: Optional[str] = None
-    line_number: Optional[int] = None
-    methods: Optional[list] = None
-    fields: Optional[list] = None
-
-    def __post_init__(self):
-        """初始化后处理"""
-        if self.methods is None:
-            self.methods = []
-        if self.fields is None:
-            self.fields = []
-    
-    def add_method(self, method):
-        """添加方法"""
-        if method not in self.methods:
-            self.methods.append(method)
-    
-    def add_field(self, field):
-        """添加字段"""
-        if field not in self.fields:
-            self.fields.append(field)
-    
-    def to_dict(self):
-        """转换为字典"""
-        from dataclasses import asdict
-        return asdict(self)
-
-
-
-
-
-
-"""
-            import io.joern.dataflowengineoss.semanticsloader.FlowSemantic
-            import io.shiftleft.semanticcpg.layers.LayerCreatorOptions
-            import io.joern.dataflowengineoss.layers.dataflows.OssDataFlowOptions
-            import io.shiftleft.semanticcpg.layers.*
-            import io.joern.dataflowengineoss.*
-            import io.joern.dataflowengineoss.layers.dataflows.*
-            
-val extraFlows = List(FlowSemantic.from("printf", List((2, -1)), regex = false),
-FlowSemantic.from("fgets", List((3, 1)), regex = false),
-FlowSemantic.from("strncpy", List((2, 1)), regex = false))
-val context = new LayerCreatorContext(cpg)
-val options = new OssDataFlowOptions(semantics = DefaultSemantics().plus(extraFlows))
-new OssDataFlow(options).run(context)
-
-
-"""

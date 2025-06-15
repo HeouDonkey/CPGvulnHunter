@@ -1,34 +1,47 @@
-from typing import Optional, List, Dict, Any, Union, Pattern
+from typing import Optional, List, Dict, Any, Union, Tuple
 from dataclasses import dataclass
 import os
 import re
 import json
-import shutil
 import logging
 import time
 import threading
-import pexpect
+from cpgqls_client import CPGQLSClient
 
 class JoernBridge:
     """
-    与 Joern 命令行交互的桥接类
-    提供稳定的连接管理和命令执行功能
+    与 Joern 服务器交互的桥接类（server-based版本）
+    使用 cpgqls_client 与 Joern 服务器通信，替代原有的 pexpect shell 交互
     """
     
-    def __init__(self, joern_path: str = "joern", timeout: int = 120) -> None:
-        self.joern_path: str = joern_path if os.path.isabs(joern_path) else shutil.which(joern_path) or joern_path
+    def __init__(self, joern_path: str = "joern", timeout: int = 120, 
+                 server_endpoint: str = "localhost:8080", 
+                 auth_credentials: Optional[Tuple[str, str]] = None) -> None:
+        """
+        初始化 JoernBridge
+        
+        Args:
+            joern_path: 保留为了兼容性，但在server模式下不使用
+            timeout: 命令超时时间（秒）
+            server_endpoint: Joern服务器端点，格式为 "host:port"
+            auth_credentials: 认证凭据，格式为 (username, password)
+        """
+        self.joern_path: str = joern_path  # 保留为了兼容性
         self.timeout: int = timeout
-        self._child: Optional[pexpect.spawn] = None
+        self.server_endpoint: str = server_endpoint
+        self.auth_credentials: Optional[Tuple[str, str]] = auth_credentials
+        
+        self._client: Optional[CPGQLSClient] = None
         self._lock: threading.Lock = threading.Lock()
         self._last_activity: float = time.time()
+        self._connected: bool = False
         
-        # 编译正则表达式以提高性能
-        self._ansi_escape: Pattern[str] = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
-        self._control_chars: Pattern[str] = re.compile(r'[\r\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]+')
-        self._multi_newlines: Pattern[str] = re.compile(r'\n{2,}')
+        # 调试相关
+        self._debug_mode = False
+        self._command_history = []
         
         self._setup_logging()
-        self.open_shell()
+        self._init_joern_server()
 
     def _setup_logging(self) -> None:
         """设置日志记录"""
@@ -38,105 +51,133 @@ class JoernBridge:
             formatter = logging.Formatter('[%(levelname)s] %(name)s: %(message)s')
             handler.setFormatter(formatter)
             self.logger.addHandler(handler)
-            self.logger.setLevel(logging.INFO)
+            # Ensure logger uses the level from config
+            self.logger.setLevel(logging.getLogger().level)
 
-    def _is_connected(self) -> bool:
-        """检查连接是否有效"""
-        return self._child is not None and self._child.isalive()
+    def enable_debug(self, debug_file: str = None):
+        """启用调试模式"""
+        self._debug_mode = True
+        if debug_file:
+            # 可以添加文件日志记录
+            file_handler = logging.FileHandler(debug_file)
+            file_formatter = logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s')
+            file_handler.setFormatter(file_formatter)
+            self.logger.addHandler(file_handler)
+        self.logger.info("调试模式已启用")
 
-    def open_shell(self, retry_count: int = 3) -> None:
-        """打开Joern shell连接"""
-        with self._lock:
-            if self._is_connected():
-                return
+    def _debug_log(self, message: str) -> None:
+        """调试日志"""
+        if self._debug_mode:
+            self.logger.debug(message)
+
+    def _init_joern_server(self) -> None:
+        """
+        建立与Joern服务器的连接
+        """
+        try:
+            self.logger.info(f"连接到Joern服务器: {self.server_endpoint}")
+            
+            # 创建客户端连接
+            self._client = CPGQLSClient(
+                server_endpoint=self.server_endpoint,
+                auth_credentials=self.auth_credentials
+            )
+            
+            # 测试连接
+            test_result = self._client.execute("val testConnection = 1")
+            if test_result.get('success', False):
+                self._connected = True
+                self._last_activity = time.time()
+                self.logger.info("成功连接到Joern服务器")
+            else:
+                raise RuntimeError(f"服务器连接测试失败: {test_result}")
                 
-            try:
-                import pexpect
-            except ImportError:
-                raise ImportError("请先安装pexpect库: pip install pexpect")
-            
-            import shlex
-            
-            # 清理旧连接
-            self._cleanup_connection()
-            
-            for attempt in range(retry_count):
-                try:
-                    self.logger.info(f"启动Joern shell (尝试 {attempt + 1}/{retry_count})")
-                    
-                    self._child = pexpect.spawn(
-                        shlex.join([self.joern_path, '--nocolors']),
-                        timeout=self.timeout
-                    )
-                    
-                    # 等待Joern启动完成
-                    index = self._child.expect([b"joern> ", pexpect.EOF, pexpect.TIMEOUT], timeout=30)
-                    
-                    if index == 0:  # 成功启动
-                        self._last_activity = time.time()
-                        self.logger.info("Joern shell 启动成功")
-                        return
-                    elif index == 1:  # EOF
-                        raise RuntimeError("Joern 进程启动后立即退出")
-                    else:  # TIMEOUT
-                        raise RuntimeError("Joern 启动超时")
-                        
-                except Exception as e:
-                    self.logger.warning(f"启动尝试 {attempt + 1} 失败: {e}")
-                    self._cleanup_connection()
-                    if attempt == retry_count - 1:
-                        raise RuntimeError(f"无法启动Joern shell，已尝试 {retry_count} 次")
-                    time.sleep(1)  # 重试间隔
-
-    def _cleanup_connection(self) -> None:
-        """清理连接资源"""
-        if self._child is not None:
-            try:
-                if self._child.isalive():
-                    self._child.sendline(b"exit")
-                    self._child.expect(pexpect.EOF, timeout=5)
-            except:
-                pass
-            finally:
-                try:
-                    self._child.close(force=True)
-                except:
-                    pass
-                self._child = None
+        except Exception as e:
+            self.logger.error(f"连接Joern服务器失败: {e}")
+            self._connected = False
+            raise RuntimeError(f"无法连接到Joern服务器: {e}")
 
     def close_shell(self) -> None:
-        """关闭Joern shell连接"""
-        with self._lock:
-            self._cleanup_connection()
-            self.logger.info("Joern shell 已关闭")
+        """
+        关闭与Joern服务器的连接
+        """
+        try:
+            if self._client:
+                self.logger.info("关闭Joern服务器连接")
+                # cpgqls_client 通常自动管理连接
+                self._client = None
+                self._connected = False
+        except Exception as e:
+            self.logger.error(f"关闭连接时出错: {e}")
 
-    def __enter__(self) -> 'JoernBridge':
-        if not self._is_connected():
-            self.open_shell()
-        return self
-
-    def __exit__(self, exc_type: Optional[type], exc_val: Optional[BaseException], exc_tb: Optional[object]) -> None:
-        self.close_shell()
-
-    def _clean_output(self, raw_output: str) -> str:
-        """清理命令输出"""
-        # 移除ANSI转义字符
-        clean_output = self._ansi_escape.sub('', raw_output)
-        # 移除控制字符
-        clean_output = self._control_chars.sub('', clean_output)
-        # 规范化换行符
-        clean_output = self._multi_newlines.sub('\n', clean_output)
-        return clean_output.strip()
+    def _is_connected(self) -> bool:
+        """检查是否连接到服务器"""
+        return self._connected and self._client is not None
 
     def _ensure_connection(self) -> None:
         """确保连接可用，如果断开则重连"""
         if not self._is_connected():
             self.logger.warning("检测到连接断开，尝试重新连接")
-            self.open_shell()
+            self._init_joern_server()
 
-    def send_command(self, cmd: str, timeout: Optional[int] = None) -> str:
+    def _clean_output(self, raw_output: str) -> str:
         """
-        发送命令到Joern shell并返回输出
+        清理服务器输出，模拟原有的shell输出清理逻辑
+        
+        Args:
+            raw_output: 服务器返回的原始输出
+            
+        Returns:
+            清理后的输出字符串
+        """
+        if not raw_output:
+            return ""
+        
+        # 移除ANSI转义码（颜色代码等）
+        ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+        clean_output = ansi_escape.sub('', raw_output)
+        
+        # 移除其他控制字符
+        control_chars = re.compile(r'[\r\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]+')
+        clean_output = control_chars.sub('', clean_output)
+        
+        # 移除多余的换行符
+        clean_output = re.sub(r'\n{2,}', '\n', clean_output)
+        
+        # 清理前导和尾随空白
+        clean_output = clean_output.strip()
+        
+        return clean_output
+
+    def _parse_server_response(self, response: Dict[str, Any]) -> str|None:
+        """
+        解析服务器响应，提取输出内容
+        
+        Args:
+            response: 服务器返回的响应字典
+            
+        Returns:
+            提取的输出字符串
+            
+        Raises:
+            RuntimeError: 如果响应表示执行失败
+        """
+        if not response:
+            return ""
+        
+        success = response.get('success', False)
+        if not success:
+            error_msg = response.get('stderr', response.get('message', '未知错误'))
+            self.logger.error(f"命令执行失败: {error_msg}")
+            return None
+        # 提取标准输出
+        stdout = response.get('stdout', '')
+        if stdout:
+            return self._clean_output(stdout)
+
+    def send_command(self, cmd: str, timeout: Optional[int] = None) -> str |None:
+        """
+        发送命令到Joern服务器并返回输出
         
         Args:
             cmd: 要执行的命令
@@ -150,77 +191,57 @@ class JoernBridge:
         """
         if not cmd.strip():
             return ""
-            
-        cmd_timeout = timeout or self.timeout
         
+        # 记录命令历史
+        timestamp = time.time()
+        self._command_history.append({
+            'command': cmd,
+            'timestamp': timestamp
+        })
+        
+        # 记录到日志文件
+        os.makedirs('logs', exist_ok=True)
+        with open('logs/joern_command_history.log', 'a', encoding='utf-8') as f:
+            f.write(f"[{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp))}] {cmd}\n")
+        
+        # 保持最近100条命令
+        if len(self._command_history) > 100:
+            self._command_history = self._command_history[-100:]
+            
         with self._lock:
             try:
-                import pexpect
-                
                 # 确保连接可用
                 self._ensure_connection()
                 
-                # 再次检查连接是否成功建立
-                if self._child is None or not self._child.isalive():
-                    raise RuntimeError("无法建立或维持Joern连接")
+                if not self._client:
+                    raise RuntimeError("无法建立或维持Joern服务器连接")
                 
-                # 清空输入输出缓冲区
-                self._child.sendline(b"")
-                try:
-                    self._child.expect_exact(b"joern> ", timeout=5)
-                    # 丢弃缓冲区内容
-                    try:
-                        self._child.read_nonblocking(size=8192, timeout=0.1)
-                    except:
-                        pass
-                except pexpect.exceptions.TIMEOUT:
-                    self.logger.warning("清理缓冲区时超时，继续执行命令")
+                # 发送命令到服务器
+                self._debug_log(f"发送命令到服务器: {cmd}")
                 
-                # 发送命令前再次检查连接
-                if self._child is None or not self._child.isalive():
-                    raise RuntimeError("连接在命令发送前断开")
+                # 执行命令
+                response = self._client.execute(cmd)
+                self._last_activity = time.time()
                 
-                # 发送命令
-                self.logger.debug(f"执行命令: {cmd}")
-                self._child.sendline(cmd.encode('utf-8'))
-                
-                # 等待命令完成
-                try:
-                    self._child.expect_exact(b"joern> ", timeout=cmd_timeout)
-                    
-                    # 获取输出
-                    raw_output = self._child.before
-                    if raw_output:
-                        output_str = raw_output.decode('utf-8', errors='replace')
-                        clean_output = self._clean_output(output_str)
-                        self._last_activity = time.time()
-                        return clean_output
-                    return ""
-                    
-                except pexpect.exceptions.TIMEOUT:
-                    self.logger.error(f"命令执行超时({cmd_timeout}秒): {cmd}")
-                    # 尝试获取部分输出
-                    try:
-                        partial_output = self._child.before
-                        if partial_output:
-                            output_str = partial_output.decode('utf-8', errors='replace')
-                            self.logger.debug(f"超时时的部分输出: {repr(output_str[:200])}")
-                    except:
-                        pass
-                    raise RuntimeError(f"命令执行超时: {cmd}")
-                    
-                except pexpect.exceptions.EOF:
-                    self.logger.error("Joern 进程意外退出")
-                    self._cleanup_connection()
-                    raise RuntimeError("Joern 进程意外退出")
+                self._debug_log(f"服务器响应: {response}")
+                if response is None:
+                    self.logger.error("服务器响应为空，可能是连接问题或命令错误")
+                # 解析响应
+                output = self._parse_server_response(response)
+                self._debug_log(f"解析后输出: {repr(output)}")
+                return output
                     
             except Exception as e:
                 self.logger.error(f"命令执行出错: {e}")
+                self._debug_log(f"命令执行异常: {e}")
+                self._debug_log(f"连接状态: {self._is_connected()}")
                 raise RuntimeError(f"命令执行失败: {e}")
+
+   
 
     def health_check(self) -> bool:
         """
-        健康检查：验证Joern shell是否正常工作
+        健康检查：验证Joern服务器是否正常工作
         
         Returns:
             True if healthy, False otherwise
@@ -228,7 +249,7 @@ class JoernBridge:
         try:
             # 发送简单的测试命令
             result = self.send_command("1 + 1", timeout=10)
-            return "2" in result
+            return "2" in result and not result.strip() == "=~"
         except Exception as e:
             self.logger.warning(f"健康检查失败: {e}")
             return False
@@ -242,11 +263,18 @@ class JoernBridge:
         """
         return {
             "connected": self._is_connected(),
-            "joern_path": self.joern_path,
+            "server_endpoint": self.server_endpoint,
             "timeout": self.timeout,
             "last_activity": self._last_activity,
-            "uptime": time.time() - self._last_activity if self._is_connected() else 0
+            "uptime": time.time() - self._last_activity if self._is_connected() else 0,
+            "command_count": len(self._command_history),
+            "debug_mode": self._debug_mode,
+            "connection_type": "server"  # 标识这是server版本
         }
+
+    def get_command_history(self) -> List[Dict[str, Any]]:
+        """获取命令历史"""
+        return self._command_history.copy()
 
     def __del__(self) -> None:
         """析构函数，确保资源清理"""

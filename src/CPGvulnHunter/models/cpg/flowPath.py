@@ -56,6 +56,7 @@ class FlowNode:
     is_output_arg: bool = False           # 是否为输出参数
     out_edge_label: str = ""              # 输出边标签
     
+    method_code = None  
     # 其他属性
     properties: Dict[str, Any] = None     # 其他属性
 
@@ -63,6 +64,15 @@ class FlowNode:
 
     classContext: Optional[str] = None  # 方法代码（如果是方法节点）
     
+    def set_method_code(self, method_code: str):
+        """
+        设置方法代码
+        :param method_code: 方法代码字符串
+        """
+        self.method_code = method_code
+
+
+
     def __post_init__(self):
         if self.possible_types is None:
             self.possible_types = []
@@ -162,23 +172,89 @@ class FlowNode:
         edge_info = f" -> {self.out_edge_label}" if self.out_edge_label else ""
         
         return f"{display_name}({self.label}){location}{edge_info}"
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """将FlowNode转换为字典格式"""
+        from dataclasses import asdict
+        return asdict(self)
+    
+    def toJson(self, indent: Optional[int] = None) -> str:
+        """
+        将FlowNode对象转换为JSON字符串
+        
+        Args:
+            indent: JSON缩进级别，None表示紧凑格式
+            
+        Returns:
+            str: JSON格式的字符串
+        """
+        return json.dumps(self.to_dict(), ensure_ascii=False, indent=indent, default=str)
+    
+    @classmethod
+    def fromJson(cls, json_str: str) -> 'FlowNode':
+        """
+        从JSON字符串创建FlowNode对象
+        
+        Args:
+            json_str: JSON格式的字符串
+            
+        Returns:
+            FlowNode: FlowNode对象实例
+        """
+        data = json.loads(json_str)
+        return cls(**data)
 
 @dataclass
 class FlowPath:
     """数据流路径，表示从源到汇的完整数据流"""
     
     nodes: List[FlowNode]                 # 路径中的所有节点
-    
+
     # 路径属性
     is_vulnerable: bool = False           # 是否为漏洞路径
     confidence: float = 0.0               # 置信度 (0.0 - 1.0)
     vulnerability_type: Optional[str] = None  # 漏洞类型
     description: Optional[str] = None     # 路径描述
     
+
+    def _get_function_chain(self) -> str:
+        """获取路径中所有节点的函数调用链"""
+        function_chain = []
+        seen = set()
+        for node in self.nodes:
+            if node.method_full_name:
+                if node.method_code not in seen:
+                    function_chain.append(node.method_code)
+                    seen.add(node.method_code)
+            else:
+                logging.warning(f"Node {node.get_display_name()} does not have a method full name.")
+        return " -> ".join(function_chain)
+
+
     def __post_init__(self):
         if self.nodes is None:
             self.nodes = []
     
+    def toJson(self) -> Dict[str, Any]: 
+        """将FlowPath转换为JSON格式"""
+        return {
+            "nodes": [node.to_dict() for node in self.nodes],
+            "is_vulnerable": self.is_vulnerable,
+            "confidence": self.confidence,
+            "vulnerability_type": self.vulnerability_type,
+            "description": self.description
+        }
+
+    def to_dict(self) -> Dict[str, Any]:
+        """将FlowPath转换为字典格式"""
+        return {
+            "nodes": [node.to_dict() for node in self.nodes],
+            "is_vulnerable": self.is_vulnerable,
+            "confidence": self.confidence,
+            "vulnerability_type": self.vulnerability_type,
+            "description": self.description
+        }
+
     @classmethod
     def from_joern_path(cls, path_data: Dict[str, Any]) -> 'FlowPath':
         """从Joern路径数据创建FlowPath实例"""
@@ -187,6 +263,42 @@ class FlowPath:
         
         return cls(nodes=nodes)
     
+    @classmethod
+    def fromJson(cls, json_str: str) -> 'FlowPath':
+        """
+        从JSON字符串创建FlowPath对象
+        
+        Args:
+            json_str: JSON格式的字符串
+            
+        Returns:
+            FlowPath: FlowPath对象实例
+        """
+        data = json.loads(json_str)
+        nodes = [FlowNode(**node_data) for node_data in data.get('nodes', [])]
+        return cls(
+            nodes=nodes,
+            is_vulnerable=data.get('is_vulnerable', False),
+            confidence=data.get('confidence', 0.0),
+            vulnerability_type=data.get('vulnerability_type'),
+            description=data.get('description')
+        )
+    
+    def _get_method_code_chain(self) -> str:
+        method_codes = []
+        """获取路径中所有节点的方法代码链"""
+        for node in self.nodes:
+            if node.method_code is None:
+                logging.warning(f"Node {node.get_display_name()} does not have method code.")
+                continue
+            else:
+                logging.debug(f"Node {node.get_display_name()} has method code.")
+            method_codes.append(node.method_code + '\n') 
+        method_codes = list(set(method_codes))  # 去重
+        logging.debug(f"Method codes in path: {method_codes}")
+        return method_codes
+
+
     @property
     def path_length(self) -> int:
         """路径长度"""
@@ -223,12 +335,13 @@ class FlowPath:
     
     def get_path_summary(self) -> str:
         """获取路径摘要"""
-        summary = f"Data flow: {self.source_info} -> {self.sink_info}"
-        if self.vulnerability_type:
-            summary += f" [{self.vulnerability_type}]"
-        if self.confidence > 0:
-            summary += f" (confidence: {self.confidence:.2f})"
-        return summary
+        try:
+            summary = self._get_function_chain()
+            logging.debug(f"Path summary: {summary}")
+            return summary
+        except Exception as e:
+            logging.error(f"获取方法代码链失败: {e}")
+            return "Error in path summary"
     
     def get_detailed_path(self) -> str:
         """获取详细的路径描述"""
@@ -251,7 +364,10 @@ class FlowPath:
         """获取特定类型的所有节点"""
         return [node for node in self.nodes if node.node_type == node_type]
     
-    
+    def get_flow_code(self) -> str:
+        """获取路径中所有节点的代码片段"""
+        flow_methods = [node.method for node in self.nodes if node.code]
+        return "\n".join(node.code for node in self.nodes if node.code)
 
 
     def __str__(self) -> str:
@@ -285,8 +401,36 @@ class DataFlowResult:
                     logging.debug(f"添加数据流路径: {flow.get_path_summary()}")
         
         return cls(flows=flows,source=source,sink=sink)
+    
+    @classmethod
+    def fromJson(cls, json_str: str) -> 'DataFlowResult':
+        """
+        从JSON字符串创建DataFlowResult对象
+        
+        Args:
+            json_str: JSON格式的字符串
             
-
+        Returns:
+            DataFlowResult: DataFlowResult对象实例
+        """
+        import json
+        data = json.loads(json_str)
+        flows = [FlowPath.fromJson(json.dumps(flow_data)) for flow_data in data.get('flows', [])]
+        return cls(
+            flows=flows,
+            analysis_time=data.get('analysis_time', 0.0),
+            source=data.get('source'),
+            sink=data.get('sink')
+        )
+            
+    def toJson(self) -> Dict[str, Any]:
+        """将数据流结果转换为JSON格式"""
+        return {
+            "flows": [flow.to_dict() for flow in self.flows],
+            "analysis_time": self.analysis_time,
+            "source": self.source,
+            "sink": self.sink
+        }
 
     @property
     def flow_count(self) -> int:
@@ -344,7 +488,32 @@ class DataFlowResult:
                 f"  Sources: {len(self.all_sources)}\n"
                 f"  Sinks: {len(self.all_sinks)}\n"
                 f"  Analysis time: {self.analysis_time:.2f}s")
+    def to_dict(self) -> Dict[str, Any]:
+        """将数据流结果转换为字典格式"""
+        # 处理source和sink的序列化
+        source_dict = None
+        sink_dict = None
+        
+        if self.source:
+            if hasattr(self.source, 'to_dict'):
+                source_dict = self.source.to_dict()
+            else:
+                source_dict = str(self.source)
+                
+        if self.sink:
+            if hasattr(self.sink, 'to_dict'):
+                sink_dict = self.sink.to_dict()
+            else:
+                sink_dict = str(self.sink)
+        
+        return {
+            "flows": [flow.to_dict() for flow in self.flows],
+            "analysis_time": self.analysis_time,
+            "source": source_dict,
+            "sink": sink_dict
+        }
     
+
     def get_detailed_report(self) -> str:
         """获取详细报告"""
         report = [self.get_summary(), "\n" + "="*50]

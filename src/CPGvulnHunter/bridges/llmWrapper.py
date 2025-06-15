@@ -6,11 +6,13 @@ import logging
 import time
 
 from CPGvulnHunter.bridges.llmBridge import LLMBridge
+from CPGvulnHunter.core.config import LLMConfig
+from CPGvulnHunter.models.cpg.flowPath import FlowPath
 from CPGvulnHunter.models.cpg.function import Function
 from CPGvulnHunter.models.cpg.semantics import ParameterFlow, Semantic, Semantics
 from CPGvulnHunter.models.llm.dataclass import LLMRequest
-from CPGvulnHunter.models.llm.llmConfig import LLMConfig
 from CPGvulnHunter.models.llm.prompt import FunctionPrompt
+from CPGvulnHunter.utils.llmCacher import LLMCacher
 
 
 
@@ -28,9 +30,13 @@ class LLMWrapper:
         
         :param llmConfig: LLM配置对象
         """
-        self.logger = logging.getLogger(__name__)
+        self.logger = logging.getLogger(__name__)      
         self.logger.info("开始初始化LLM Wrapper...")
         
+        # Ensure logger uses the level from config
+        self.logger.setLevel(logging.getLogger().level)
+        self.cacher = LLMCacher(llmConfig.cache_file)  # 初始化缓存器
+
         try:
             # 初始化LLM客户端
             self.logger.debug(f"LLM配置 - 模型: {llmConfig.model}, 基础URL: {llmConfig.base_url}")
@@ -124,24 +130,34 @@ class LLMWrapper:
             
         func_name = func.full_name
         self.logger.debug(f"开始分析函数: {func_name}")
+        cache = self.cacher.find_cache(func.generateSignature())
+        if cache:
+            self.logger.info(f"函数 {func_name} 的分析结果已在缓存中，直接返回")
+            data = cache
+        else:
+            self.logger.info(f"函数 {func_name} 的分析结果不在缓存中，开始构建LLM请求")
+            # 构建针对单个函数的提示词
+            try:
+                request = FunctionPrompt.build_semantic_analysis_request(func)
+                self.logger.debug(f"为函数 {func_name} 构建分析请求完成")
+            except Exception as e:
+                self.logger.error(f"为函数 {func_name} 构建分析请求失败: {e}")
+                return None
+            
+            # 发送请求并获取响应
+            try:
+                start_time = time.time()
+                data: dict = self.llm_client.send(request, True)
+                request_time = time.time() - start_time
+                self.logger.debug(f"函数 {func_name} LLM请求完成，耗时: {request_time:.2f}秒")
+                self.cacher.add_cache(func.generateSignature(), data)  # 缓存结果
+            except Exception as e:
+                self.logger.error(f"函数 {func_name} LLM请求失败: {e}")
+                return None
         
-        # 构建针对单个函数的提示词
-        try:
-            request = FunctionPrompt.build_semantic_analysis_request(func)
-            self.logger.debug(f"为函数 {func_name} 构建分析请求完成")
-        except Exception as e:
-            self.logger.error(f"为函数 {func_name} 构建分析请求失败: {e}")
-            return None
-        
-        # 发送请求并获取响应
-        try:
-            start_time = time.time()
-            data: dict = self.llm_client.send(request, True)
-            request_time = time.time() - start_time
-            self.logger.debug(f"函数 {func_name} LLM请求完成，耗时: {request_time:.2f}秒")
-        except Exception as e:
-            self.logger.error(f"函数 {func_name} LLM请求失败: {e}")
-            return None
+        # Debug log: Print all data received from LLM
+        if self.logger.isEnabledFor(logging.DEBUG):
+            self.logger.debug(f"函数 {func_name} - LLM返回的完整数据: {json.dumps(data, indent=2, ensure_ascii=False)}")
         
         # 解析语义规则
         try:      
@@ -193,7 +209,7 @@ class LLMWrapper:
             self.logger.info(f"函数 {func_name} 语义规则生成成功 - 参数流数量: {len(param_flows)}, 置信度: {confidence}")
             if reasoning:
                 self.logger.debug(f"函数 {func_name} 分析依据: {reasoning}")
-            
+
             return rule
             
         except Exception as e:
@@ -203,11 +219,35 @@ class LLMWrapper:
             self.logger.error(f"异常堆栈: {traceback.format_exc()}")
             return None
     
-
-
-    def analyze_function(self, llmRequest: LLMRequest) -> Optional[dict]:
+    def analyze_dataflow(self,request:LLMRequest) -> Optional[dict]:
         """
-        分析函数并返回结果
+        分析数据流路径并返回结果
+        
+        :param flowPath: 数据流路径对象
+        """
+        self.logger.debug("开始分析数据流路径")
+        with open('./logs/llm_request.json', 'a', encoding='utf-8') as f:
+            f.write(request.prompt + '\n')
+        start_time = time.time()
+        data: dict = self.llm_client.send(request, True)
+        request_time = time.time() - start_time
+        
+        self.logger.debug(f"LLM请求完成，耗时: {request_time:.2f}秒")
+        
+        # 检查响应格式
+        if not isinstance(data, dict):
+            self.logger.error(f"LLM返回数据不是字典类型: {type(data)}")
+            return None
+        
+        self.logger.debug(f"LLM响应数据包含 {len(data)} 个顶级字段: {list(data.keys())}")
+        
+        # 返回分析结果
+        return data
+
+
+    def function_clasification(self, llmRequest: LLMRequest) -> Optional[dict]:
+        """
+        分析单个函数的通用方法，只是做和大模型的交互，不进行任何分析。
         
         :param llmRequest: LLM请求对象
         :return: 分析结果字典或None
@@ -223,7 +263,6 @@ class LLMWrapper:
             start_time = time.time()
             data: dict = self.llm_client.send(llmRequest, True)
             request_time = time.time() - start_time
-            
             self.logger.debug(f"LLM请求完成，耗时: {request_time:.2f}秒")
             
             # 检查响应格式
@@ -243,9 +282,9 @@ class LLMWrapper:
             self.logger.error(f"错误堆栈: {traceback.format_exc()}")
             return None
 
-       
 
-  
+
+
 
 
 

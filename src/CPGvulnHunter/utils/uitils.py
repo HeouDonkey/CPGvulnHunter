@@ -91,8 +91,8 @@ def extract_json_block(text: str) -> Union[dict, list]:
             pass
     
     # 如果所有方法都失败，提供详细的错误信息
-    logging.error(f"无法提取JSON，原始文本前200字符: {text[:200]}")
-    logging.error(f"文本repr: {repr(text[:100])}")
+    logging.error(f"无法提取JSON，原始文本: {text}")
+    logging.error(f"文本repr: {repr(text)}")
     raise ValueError(f"在文本中未找到有效的JSON内容。文本长度: {len(text)}")
 
 

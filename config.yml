@@ -5,9 +5,10 @@ debug_mode: false
 
 # LLM配置
 llm:
-  base_url: "http://192.168.5.253:3000/api/"
-  api_key: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjBjN2ZjYWI0LWNkYTctNDQ5MC04Y2VkLThmZDNjNDQ0ODM4MyJ9.EF4VyeqVO0rfgN5mpFWYYZEaarcOXSQ1vjw-UYVCfkI"
-  model: "qwen2.5:14b"
+  api_key: "sk-8158d4116c9b4ec4a360bfefccdab29f"
+  base_url: "https://api.deepseek.com"
+  #api_key: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjBjN2ZjYWI0LWNkYTctNDQ5MC04Y2VkLThmZDNjNDQ0ODM4MyJ9.EF4VyeqVO0rfgN5mpFWYYZEaarcOXSQ1vjw-UYVCfkI"
+  model: "deepseek-chat"
   temperature: 0.7
   max_tokens: 2048
   timeout: 30

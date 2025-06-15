@@ -1,0 +1,140 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environment
+venv/
+ENV/
+env/
+.venv/
+.ENV/
+.env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pyenv
+.python-version
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# 项目特定文件
+# 日志文件
+logs/
+*.log
+
+# 输出目录
+output/
+results/
+
+# 缓存目录
+cache/
+llm_cache/
+*.pkl
+*.cache
+
+# Joern工作区
+workspace/
+*.cpg
+
+# 配置文件中的敏感信息（如果需要）
+# config.yml  # 如果包含敏感信息，取消注释
+
+# LLM缓存文件
+llm_cache.json
+llm_responses.pkl
+
+# 临时文件
+temp/
+tmp/
+*.tmp
+*.temp
+
+# 测试覆盖率
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+
+# OS特定文件
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+
+# Linux
+*~
+.directory
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# 项目特定的大文件
+# 数据文件
+data/
+*.csv
+*.json.gz
+*.tar.gz
+
+# 分析结果
+analysis_results/
+vulnerability_reports/
+
+# 第三方工具
+joern-cli/
+joern/
+
+
+config.yml
