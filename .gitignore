@@ -43,7 +43,7 @@ env/
 
 # pyenv
 .python-version
-
+./test
 # Environments
 .env
 .venv
